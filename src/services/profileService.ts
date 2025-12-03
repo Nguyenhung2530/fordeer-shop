@@ -18,7 +18,7 @@ export const profileService = {
     if (data.avatar) {
       const formData = new FormData();
       if (data.username) {
-        formData.append('fullName', data.username); // Map username from form to fullName
+        formData.append('fullName', data.username);
       }
       if (data.phone) formData.append('phone', data.phone);
       formData.append('avatar', data.avatar);
@@ -36,7 +36,7 @@ export const profileService = {
     // If only updating text, use JSON
     const jsonData: { [key: string]: string | undefined } = {};
     if (data.username) {
-      jsonData.fullName = data.username; // Map username from form to fullName
+      jsonData.fullName = data.username;
     }
     if (data.phone) {
       jsonData.phone = data.phone;

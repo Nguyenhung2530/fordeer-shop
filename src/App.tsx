@@ -1,11 +1,13 @@
 import ProtectedRoute from "@/components/ProtectedRoute";
-import AuthPage from "@/pages/auth-page";
 import CartPage from "@/pages/cart-page";
 import HomePage from "@/pages/home-page";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import ProfilePage from "@/pages/profile-page";
 import RecruitmentPage from "@/pages/recruitment-page";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import AuthPage from "./pages/auth-page";
+import ForgotPasswordPage from "./pages/auth-page/forgot-password";
+import ResetPasswordPage from "./pages/auth-page/reset-password";
+import PrivacyPolicy from "./pages/privacy-policy";
+import ProfilePage from "./pages/profile-page";
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
         <Route path="/about" element={<div>About us - Coming soon</div>} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route
           path="/profile"
