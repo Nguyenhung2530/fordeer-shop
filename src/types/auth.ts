@@ -8,7 +8,6 @@ export interface Customer {
   birthYear?: number | null;
   avatarUrl?: string;
   // Optional fields for compatibility or future use
-  username?: string;
   role?: string;
 }
 

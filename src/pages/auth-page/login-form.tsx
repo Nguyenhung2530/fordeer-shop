@@ -1,6 +1,6 @@
 import { signInWithPopup } from "firebase/auth";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { auth, facebookProvider, googleProvider } from "../../config/firebase";
 import { authService } from "../../services/authService";
 
@@ -149,9 +149,9 @@ export default function LoginForm() {
           />
           <span className="text-[13px] text-gray-600">Ghi nhớ đăng nhập</span>
         </label>
-        <a href="#" className="text-[13px] text-[#45690b] hover:underline">
+        <Link to="/forgot-password" className="text-[13px] text-[#45690b] hover:underline">
           Quên mật khẩu?
-        </a>
+        </Link>
       </div>
 
       {/* Error Message */}

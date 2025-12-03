@@ -6,7 +6,7 @@ import type { Customer } from '@/types/auth';
  */
 export const getDisplayName = (user: Customer | null): string => {
   if (!user) return '';
-  return user.fullName || user.username || user.email.split('@')[0];
+  return user.fullName || user.email.split('@')[0];
 };
 
 /**

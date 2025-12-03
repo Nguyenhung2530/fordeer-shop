@@ -13,7 +13,7 @@ interface EditProfileModalProps {
 
 export default function EditProfileModal({ isOpen, onClose, user, onSuccess }: EditProfileModalProps) {
   const [formData, setFormData] = useState({
-    username: user.fullName || '', // Use fullName
+    username: user.fullName || '',
     phone: user.phone || '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
