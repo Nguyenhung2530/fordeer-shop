@@ -28,10 +28,17 @@ export default function LoginForm() {
       // Check role and redirect accordingly
       const userRole = response.customer?.role?.toLowerCase();
       if (userRole === "admin" || userRole === "staff") {
-        // Redirect admin/staff to management site with token
+        // Get tokens before clearing
         const accessToken = localStorage.getItem("accessToken");
         const refreshToken = localStorage.getItem("refreshToken");
         const user = encodeURIComponent(JSON.stringify(response.customer));
+
+        // Clear localStorage on shop site (admin/staff shouldn't stay logged in here)
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+
+        // Redirect admin/staff to management site with token
         window.location.href = `https://fordeer-management.vercel.app/?token=${accessToken}&refresh=${refreshToken}&user=${user}`;
       } else {
         navigate("/");
@@ -73,6 +80,11 @@ export default function LoginForm() {
         // Check role and redirect accordingly
         const userRole = data.customer?.role?.toLowerCase();
         if (userRole === "admin" || userRole === "staff") {
+          // Clear localStorage on shop site (admin/staff shouldn't stay logged in here)
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
+
           // Redirect admin/staff to management site with token
           const user = encodeURIComponent(JSON.stringify(data.customer));
           window.location.href = `https://fordeer-management.vercel.app/?token=${data.accessToken}&refresh=${data.refreshToken}&user=${user}`;
