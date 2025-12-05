@@ -13,9 +13,12 @@ export const authService = {
    * Login with email and password
    */
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    // Backend expects 'identifier' field (can be email or phone)
+    // Backend expects 'email' or 'phone' field
+    const isEmail = credentials.email.includes("@");
     const payload = {
-      identifier: credentials.email,
+      ...(isEmail
+        ? { email: credentials.email }
+        : { phone: credentials.email }),
       password: credentials.password,
     };
 
