@@ -171,8 +171,6 @@ export default function ProductGrid() {
     setTimeout(() => setIsAutoSliding(true), 5000);
   };
   const { ref: tabsRef, isVisible: tabsVisible } = useScrollAnimation(0.2);
-  const { ref: productsRef, isVisible: productsVisible } =
-    useScrollAnimation(0.1);
 
   const filteredProducts = products.filter(
     (p) => p.category === activeCategory
@@ -234,6 +232,18 @@ export default function ProductGrid() {
 
   return (
     <section className="py-8 md:py-12 bg-[#fcfcf6]">
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
       <div className="max-w-[1152px] mx-auto px-4">
         {/* Header Section */}
         <div ref={headerRef} className="text-center mb-6 md:mb-8 relative">
@@ -326,7 +336,7 @@ export default function ProductGrid() {
             Chưa có sản phẩm nào trong danh mục này
           </div>
         ) : (
-          <div ref={productsRef} className="relative flex items-center">
+          <div className="relative flex items-center">
             <button
               onClick={() => scroll("left")}
               className="hidden md:flex flex-shrink-0 w-10 h-10 bg-[#d9ef7f] rounded-full items-center justify-center hover:bg-[#c5e060] hover:scale-110 transition-all duration-300 shadow-md"
@@ -382,13 +392,12 @@ export default function ProductGrid() {
               >
                 {filteredProducts.map((product, index) => (
                   <div
-                    key={index}
-                    className={`w-[160px] md:w-[240px] group cursor-pointer transition-all duration-500 ${
-                      productsVisible
-                        ? "opacity-100 translate-y-0"
-                        : "opacity-0 translate-y-10"
-                    }`}
-                    style={{ transitionDelay: `${index * 100}ms` }}
+                    key={product.id}
+                    className="w-[160px] md:w-[240px] group cursor-pointer transition-all duration-500 opacity-100"
+                    style={{
+                      animationDelay: `${index * 100}ms`,
+                      animation: "fadeInUp 0.5s ease-out forwards",
+                    }}
                     onClick={() => {
                       if (!isDragging) {
                         setSelectedProduct(product);
