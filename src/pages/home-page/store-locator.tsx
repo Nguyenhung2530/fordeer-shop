@@ -1,9 +1,15 @@
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { useNavigate } from "react-router-dom";
 
 export default function StoreLocator() {
+  const navigate = useNavigate();
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation(0.2);
   const { ref: contentRef, isVisible: contentVisible } =
     useScrollAnimation(0.2);
+
+  const handleFindStore = () => {
+    navigate("/stores");
+  };
 
   return (
     <section className="py-8 md:py-8 xl:py-12 2xl:py-16 mb-6 md:mb-8 xl:mb-12 overflow-hidden">
@@ -86,12 +92,12 @@ export default function StoreLocator() {
 
             <div className="relative group">
               <select className="w-full h-[38px] md:h-[38px] xl:h-[44px] 2xl:h-[50px] px-3 md:px-3 xl:px-4 bg-white border border-gray-300 text-[#45690b] text-[12px] md:text-[12px] xl:text-[14px] 2xl:text-[15px] appearance-none cursor-pointer hover:border-[#45690b] focus:border-[#45690b] focus:ring-2 focus:ring-[#d9ef7f] transition-all duration-300 rounded-lg xl:rounded-xl">
-                <option>Vui lòng chọn quận, huyện</option>
-                <option>Cầu Giấy</option>
-                <option>Đống Đa</option>
-                <option>Ba Đình</option>
-                <option>Hoàn Kiếm</option>
-                <option>Hai Bà Trưng</option>
+                <option value="">Vui lòng chọn quận, huyện</option>
+                <option value="cau-giay">Cầu Giấy</option>
+                <option value="dong-da">Đống Đa</option>
+                <option value="ba-dinh">Ba Đình</option>
+                <option value="hoan-kiem">Hoàn Kiếm</option>
+                <option value="hai-ba-trung">Hai Bà Trưng</option>
               </select>
               <svg
                 className="absolute right-3 md:right-4 xl:right-5 top-1/2 -translate-y-1/2 pointer-events-none group-hover:translate-y-[-40%] transition-transform duration-300 xl:w-6 xl:h-6"
@@ -110,7 +116,10 @@ export default function StoreLocator() {
               </svg>
             </div>
 
-            <button className="hidden md:block w-full bg-[#45690b] text-white py-2.5 xl:py-3 2xl:py-4 rounded-full font-bold text-sm xl:text-base 2xl:text-lg hover:bg-[#42612e] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-md hover:shadow-lg">
+            <button
+              onClick={handleFindStore}
+              className="hidden md:block w-full bg-[#45690b] text-white py-2.5 xl:py-3 2xl:py-4 rounded-full font-bold text-sm xl:text-base 2xl:text-lg hover:bg-[#42612e] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-md hover:shadow-lg"
+            >
               Tìm cửa hàng
             </button>
           </div>

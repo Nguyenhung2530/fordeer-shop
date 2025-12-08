@@ -10,11 +10,18 @@ import { toast } from "sonner";
 
 type PaymentMethod = "cod" | "sepay" | "bank";
 
+interface DiscountInfo {
+  code: string;
+  amount: number;
+  description: string;
+}
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [discountInfo, setDiscountInfo] = useState<DiscountInfo | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -45,6 +52,12 @@ export default function CheckoutPage() {
     }
     setCartItems(items);
 
+    // Load discount from cart page
+    const savedDiscount = localStorage.getItem("checkoutDiscount");
+    if (savedDiscount) {
+      setDiscountInfo(JSON.parse(savedDiscount));
+    }
+
     // Pre-fill user info
     const user = authService.getCurrentUser();
     if (user) {
@@ -62,8 +75,8 @@ export default function CheckoutPage() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const shipping = subtotal >= 200000 ? 0 : 30000;
-  const total = subtotal + shipping;
+  const discount = discountInfo?.amount || 0;
+  const total = subtotal - discount;
 
   const formatPrice = (price: number) => {
     return price.toLocaleString("vi-VN") + "đ";
@@ -89,8 +102,8 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      // Create order first
-      const order = await orderService.createOrder(cartItems, 0);
+      // Create order with discount
+      const order = await orderService.createOrder(cartItems, discount);
 
       // Handle SePay payment
       if (paymentMethod === "sepay") {
@@ -109,6 +122,7 @@ export default function CheckoutPage() {
 
       // For COD and other methods, clear cart and show success
       cartService.clearCart();
+      localStorage.removeItem("checkoutDiscount"); // Clear discount after order
       toast.success(`Đặt hàng thành công! Mã đơn: ${order.orderCode}`);
       navigate("/order-success", { state: { order, formData } });
     } catch (error: any) {
@@ -464,12 +478,16 @@ export default function CheckoutPage() {
                         {formatPrice(subtotal)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-[14px]">
-                      <span className="text-gray-600">Phí vận chuyển</span>
-                      <span className="text-[#1d4220]">
-                        {shipping === 0 ? "Miễn phí" : formatPrice(shipping)}
-                      </span>
-                    </div>
+                    {discountInfo && discount > 0 && (
+                      <div className="flex justify-between text-[14px]">
+                        <span className="text-gray-600">
+                          Giảm giá ({discountInfo.code.toUpperCase()})
+                        </span>
+                        <span className="text-red-500">
+                          -{formatPrice(discount)}
+                        </span>
+                      </div>
+                    )}
                     <div className="h-px bg-gray-200"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-[#45690b] font-bold text-[16px]">

@@ -197,41 +197,13 @@ export default function ProfileDropdown() {
               </p>
             </div>
           </Link>
-
-          <Link
-            to="/favorites"
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-3 xl:gap-4 px-4 py-2.5 xl:px-5 xl:py-3 text-sm xl:text-[15px] text-gray-700 hover:bg-[#45690b]/5 hover:text-[#45690b] transition-colors group"
-          >
-            <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-lg bg-gray-100 group-hover:bg-[#45690b]/10 flex items-center justify-center transition-colors">
-              <svg
-                className="w-4 h-4 xl:w-5 xl:h-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Yêu thích</p>
-              <p className="text-xs xl:text-sm text-gray-400">
-                Sản phẩm đã lưu
-              </p>
-            </div>
-          </Link>
         </div>
 
         {/* Logout */}
-        <div className="border-t border-gray-100 p-2 xl:p-3">
+        <div className="border-t border-gray-100 px-2 xl:px-3 py-1 xl:py-1.5">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 xl:gap-4 px-3 py-2.5 xl:py-3 text-sm xl:text-[15px] text-red-600 hover:bg-red-50 transition-colors w-full rounded-lg group"
+            className="flex items-center gap-3 xl:gap-4 px-3 py-2 xl:py-2.5 text-sm xl:text-[15px] text-red-600 hover:bg-red-50 transition-colors w-full rounded-lg group"
           >
             <div className="w-8 h-8 xl:w-10 xl:h-10 rounded-lg bg-red-50 group-hover:bg-red-100 flex items-center justify-center transition-colors">
               <svg

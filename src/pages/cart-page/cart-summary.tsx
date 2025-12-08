@@ -112,6 +112,20 @@ export default function CartSummary() {
       return;
     }
 
+    // Save discount info to localStorage for checkout page
+    if (appliedPromo && discount > 0) {
+      localStorage.setItem(
+        "checkoutDiscount",
+        JSON.stringify({
+          code: appliedPromo,
+          amount: discount,
+          description: PROMO_CODES[appliedPromo]?.description,
+        })
+      );
+    } else {
+      localStorage.removeItem("checkoutDiscount");
+    }
+
     navigate("/checkout");
   };
 
@@ -183,9 +197,6 @@ export default function CartSummary() {
               <span className="text-red-500">-{formatPrice(discount)}</span>
             </div>
           )}
-          <p className="text-[12px] text-gray-500 italic">
-            * Phí vận chuyển sẽ được tính ở bước thanh toán
-          </p>
         </div>
 
         {/* Divider */}
