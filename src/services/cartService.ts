@@ -1,3 +1,5 @@
+/*** Xử lý giỏ hàng - localStorage và sync với server ***/
+
 import { authService } from "./authService";
 
 export interface CartItem {
@@ -13,35 +15,33 @@ export interface CartItem {
 const CART_KEY = "fordeer_cart";
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const cartService = {
-  /**
-   * Get all items in cart (from localStorage)
-   */
-  getCart: (): CartItem[] => {
+/**
+ * Lấy giỏ hàng từ localStorage
+ */
+const getCart = () => {
+  try {
     const cartStr = localStorage.getItem(CART_KEY);
-    if (!cartStr) return [];
-    try {
-      return JSON.parse(cartStr);
-    } catch {
-      return [];
-    }
-  },
+    return cartStr ? JSON.parse(cartStr) : [];
+  } catch (error) {
+    console.error("Get cart error:", error);
+    return [];
+  }
+};
 
-  /**
-   * Save cart to localStorage
-   */
-  saveCart: (cart: CartItem[]): void => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    cartService.dispatchCartUpdate(cart);
-  },
+/**
+ * Lưu giỏ hàng vào localStorage
+ */
+const saveCart = (cart) => {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  dispatchCartUpdate(cart);
+};
 
-  /**
-   * Add item to cart
-   */
-  addToCart: (
-    item: Omit<CartItem, "quantity"> & { quantity?: number }
-  ): CartItem[] => {
-    const cart = cartService.getCart();
+/**
+ * Thêm sản phẩm vào giỏ hàng
+ */
+const addToCart = (item) => {
+  try {
+    const cart = getCart();
     const existingIndex = cart.findIndex(
       (i) => i.productId === item.productId && i.size === item.size
     );
@@ -52,25 +52,25 @@ export const cartService = {
       cart.push({ ...item, quantity: item.quantity || 1 });
     }
 
-    cartService.saveCart(cart);
+    saveCart(cart);
 
-    // Sync to server if logged in (fire and forget)
     if (authService.isAuthenticated()) {
-      cartService.syncToServer(cart).catch(console.error);
+      syncToServer(cart).catch(console.error);
     }
 
     return cart;
-  },
+  } catch (error) {
+    console.error("Add to cart error:", error);
+    return getCart();
+  }
+};
 
-  /**
-   * Update item quantity
-   */
-  updateQuantity: (
-    productId: number,
-    quantity: number,
-    size?: string
-  ): CartItem[] => {
-    const cart = cartService.getCart();
+/**
+ * Cập nhật số lượng sản phẩm
+ */
+const updateQuantity = (productId, quantity, size) => {
+  try {
+    const cart = getCart();
     const index = cart.findIndex(
       (i) => i.productId === productId && i.size === size
     );
@@ -83,21 +83,25 @@ export const cartService = {
       }
     }
 
-    cartService.saveCart(cart);
+    saveCart(cart);
 
-    // Sync to server if logged in
     if (authService.isAuthenticated()) {
-      cartService.syncToServer(cart).catch(console.error);
+      syncToServer(cart).catch(console.error);
     }
 
     return cart;
-  },
+  } catch (error) {
+    console.error("Update quantity error:", error);
+    return getCart();
+  }
+};
 
-  /**
-   * Update item note
-   */
-  updateNote: (productId: number, note: string, size?: string): CartItem[] => {
-    const cart = cartService.getCart();
+/**
+ * Cập nhật ghi chú sản phẩm
+ */
+const updateNote = (productId, note, size) => {
+  try {
+    const cart = getCart();
     const index = cart.findIndex(
       (i) => i.productId === productId && i.size === size
     );
@@ -106,182 +110,197 @@ export const cartService = {
       cart[index].note = note;
     }
 
-    cartService.saveCart(cart);
+    saveCart(cart);
     return cart;
-  },
+  } catch (error) {
+    console.error("Update note error:", error);
+    return getCart();
+  }
+};
 
-  /**
-   * Remove item from cart
-   */
-  removeFromCart: (productId: number, size?: string): CartItem[] => {
-    const cart = cartService.getCart();
+/**
+ * Xóa sản phẩm khỏi giỏ hàng
+ */
+const removeFromCart = (productId, size) => {
+  try {
+    const cart = getCart();
     const filtered = cart.filter(
       (i) => !(i.productId === productId && i.size === size)
     );
 
-    cartService.saveCart(filtered);
+    saveCart(filtered);
 
-    // Sync to server if logged in
     if (authService.isAuthenticated()) {
-      cartService.syncToServer(filtered).catch(console.error);
+      syncToServer(filtered).catch(console.error);
     }
 
     return filtered;
-  },
+  } catch (error) {
+    console.error("Remove from cart error:", error);
+    return getCart();
+  }
+};
 
-  /**
-   * Clear entire cart
-   */
-  clearCart: (): void => {
+/**
+ * Xóa toàn bộ giỏ hàng
+ */
+const clearCart = () => {
+  try {
     localStorage.removeItem(CART_KEY);
-    cartService.dispatchCartUpdate([]);
+    dispatchCartUpdate([]);
 
-    // Clear on server if logged in
     if (authService.isAuthenticated()) {
-      cartService.clearOnServer().catch(console.error);
+      clearOnServer().catch(console.error);
     }
-  },
+  } catch (error) {
+    console.error("Clear cart error:", error);
+  }
+};
 
-  /**
-   * Get cart total
-   */
-  getTotal: (): number => {
-    const cart = cartService.getCart();
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  },
+/**
+ * Tính tổng tiền giỏ hàng
+ */
+const getTotal = () => {
+  const cart = getCart();
+  return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+};
 
-  /**
-   * Get cart item count
-   */
-  getItemCount: (): number => {
-    const cart = cartService.getCart();
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
-  },
+/**
+ * Đếm số lượng sản phẩm trong giỏ
+ */
+const getItemCount = () => {
+  const cart = getCart();
+  return cart.reduce((sum, item) => sum + item.quantity, 0);
+};
 
-  /**
-   * Dispatch cart update event
-   */
-  dispatchCartUpdate: (cart: CartItem[]): void => {
-    window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
-  },
+/**
+ * Dispatch event cập nhật giỏ hàng
+ */
+const dispatchCartUpdate = (cart) => {
+  window.dispatchEvent(new CustomEvent("cartUpdated", { detail: cart }));
+};
 
-  // ============ SERVER SYNC METHODS ============
+// ============ SERVER SYNC METHODS ============
 
-  /**
-   * Sync local cart to server
-   */
-  syncToServer: async (cart: CartItem[]): Promise<void> => {
+/**
+ * Đồng bộ giỏ hàng lên server
+ */
+const syncToServer = async (cart) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) return;
 
-    try {
-      await fetch(`${API_URL}/api/customer/cart/sync`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ items: cart }),
-      });
-    } catch (error) {
-      console.error("Failed to sync cart to server:", error);
-    }
-  },
+    await fetch(`${API_URL}/api/customer/cart/sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ items: cart }),
+    });
+  } catch (error) {
+    console.error("Sync to server error:", error);
+  }
+};
 
-  /**
-   * Load cart from server and merge with local
-   */
-  loadFromServer: async (): Promise<CartItem[]> => {
+/**
+ * Tải giỏ hàng từ server và merge với local
+ */
+const loadFromServer = async () => {
+  try {
     const token = authService.getAccessToken();
-    if (!token) return cartService.getCart();
+    if (!token) return getCart();
 
-    try {
-      const response = await fetch(`${API_URL}/api/customer/cart`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const response = await fetch(`${API_URL}/api/customer/cart`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (!response.ok) {
-        return cartService.getCart();
-      }
+    if (!response.ok) return getCart();
 
-      const data = await response.json();
-      const serverCart: CartItem[] = data.items || [];
-      const localCart = cartService.getCart();
+    const data = await response.json();
+    const serverCart = data.items || [];
+    const localCart = getCart();
+    const mergedCart = mergeCarts(localCart, serverCart);
 
-      // Merge strategy: combine local and server, prefer local quantities for conflicts
-      const mergedCart = cartService.mergeCarts(localCart, serverCart);
+    saveCart(mergedCart);
+    await syncToServer(mergedCart);
 
-      cartService.saveCart(mergedCart);
+    return mergedCart;
+  } catch (error) {
+    console.error("Load from server error:", error);
+    return getCart();
+  }
+};
 
-      // Sync merged cart back to server
-      await cartService.syncToServer(mergedCart);
+/**
+ * Merge 2 giỏ hàng (local ưu tiên)
+ */
+const mergeCarts = (localCart, serverCart) => {
+  const merged = [...localCart];
 
-      return mergedCart;
-    } catch (error) {
-      console.error("Failed to load cart from server:", error);
-      return cartService.getCart();
+  for (const serverItem of serverCart) {
+    const existingIndex = merged.findIndex(
+      (i) => i.productId === serverItem.productId && i.size === serverItem.size
+    );
+
+    if (existingIndex < 0) {
+      merged.push(serverItem);
     }
-  },
+  }
 
-  /**
-   * Merge two carts (local takes priority for conflicts)
-   */
-  mergeCarts: (localCart: CartItem[], serverCart: CartItem[]): CartItem[] => {
-    const merged = [...localCart];
+  return merged;
+};
 
-    for (const serverItem of serverCart) {
-      const existingIndex = merged.findIndex(
-        (i) =>
-          i.productId === serverItem.productId && i.size === serverItem.size
-      );
-
-      if (existingIndex < 0) {
-        // Item only exists on server, add it
-        merged.push(serverItem);
-      }
-      // If exists locally, keep local version (already in merged)
-    }
-
-    return merged;
-  },
-
-  /**
-   * Clear cart on server
-   */
-  clearOnServer: async (): Promise<void> => {
+/**
+ * Xóa giỏ hàng trên server
+ */
+const clearOnServer = async () => {
+  try {
     const token = authService.getAccessToken();
     if (!token) return;
 
-    try {
-      await fetch(`${API_URL}/api/customer/cart`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    } catch (error) {
-      console.error("Failed to clear cart on server:", error);
-    }
-  },
+    await fetch(`${API_URL}/api/customer/cart`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch (error) {
+    console.error("Clear on server error:", error);
+  }
+};
 
-  /**
-   * Called when user logs in - sync carts
-   */
-  onLogin: async (): Promise<void> => {
-    try {
-      await cartService.loadFromServer();
-    } catch (error) {
-      console.error("Failed to sync cart on login:", error);
-      // Don't throw - cart sync failure shouldn't block login
-    }
-  },
+/**
+ * Gọi khi user đăng nhập - sync giỏ hàng
+ */
+const onLogin = async () => {
+  try {
+    await loadFromServer();
+  } catch (error) {
+    console.error("On login sync error:", error);
+  }
+};
 
-  /**
-   * Called when user logs out - keep local cart
-   */
-  onLogout: (): void => {
-    // Keep local cart as-is, just don't sync anymore
-  },
+/**
+ * Gọi khi user đăng xuất
+ */
+const onLogout = () => {
+  // Giữ nguyên local cart
+};
+
+export const cartService = {
+  getCart,
+  saveCart,
+  addToCart,
+  updateQuantity,
+  updateNote,
+  removeFromCart,
+  clearCart,
+  getTotal,
+  getItemCount,
+  dispatchCartUpdate,
+  syncToServer,
+  loadFromServer,
+  mergeCarts,
+  clearOnServer,
+  onLogin,
+  onLogout,
 };

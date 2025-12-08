@@ -1,17 +1,8 @@
+/*** Xử lý đơn hàng - tạo, xem, hủy đơn ***/
+
 import { authService } from "./authService";
-import type { CartItem } from "./cartService";
 
 const API_URL = import.meta.env.VITE_API_URL;
-
-export interface OrderItem {
-  productId: number;
-  quantity: number;
-}
-
-export interface CreateOrderRequest {
-  items: OrderItem[];
-  discount?: number;
-}
 
 export interface Order {
   id: number;
@@ -33,17 +24,17 @@ export interface Order {
   }[];
 }
 
-export const orderService = {
-  /**
-   * Create order from cart items
-   */
-  createOrder: async (cartItems: CartItem[], discount = 0): Promise<Order> => {
+/**
+ * Tạo đơn hàng từ giỏ hàng
+ */
+const createOrder = async (cartItems, discount = 0) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error("Vui lòng đăng nhập để đặt hàng");
     }
 
-    const items: OrderItem[] = cartItems.map((item) => ({
+    const items = cartItems.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
     }));
@@ -64,16 +55,17 @@ export const orderService = {
     }
 
     return data.order;
-  },
+  } catch (error) {
+    console.error("Create order error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Get customer's orders
-   */
-  getOrders: async (
-    page = 1,
-    limit = 10,
-    status?: string
-  ): Promise<{ orders: Order[]; pagination: any }> => {
+/**
+ * Lấy danh sách đơn hàng của customer
+ */
+const getOrders = async (page = 1, limit = 10, status = null) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error("Vui lòng đăng nhập");
@@ -88,9 +80,7 @@ export const orderService = {
     const response = await fetch(
       `${API_URL}/api/customer/orders?${params.toString()}`,
       {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 
@@ -100,27 +90,28 @@ export const orderService = {
       throw new Error(responseData.message || "Không thể tải đơn hàng");
     }
 
-    // Backend returns { data: [...], pagination: {...} }
-    // Transform to { orders: [...], pagination: {...} }
     return {
       orders: responseData.data || [],
       pagination: responseData.pagination,
     };
-  },
+  } catch (error) {
+    console.error("Get orders error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Get order by ID
-   */
-  getOrderById: async (orderId: number): Promise<Order> => {
+/**
+ * Lấy chi tiết đơn hàng theo ID
+ */
+const getOrderById = async (orderId) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error("Vui lòng đăng nhập");
     }
 
     const response = await fetch(`${API_URL}/api/customer/orders/${orderId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     const data = await response.json();
@@ -130,12 +121,17 @@ export const orderService = {
     }
 
     return data.order;
-  },
+  } catch (error) {
+    console.error("Get order by ID error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Cancel order
-   */
-  cancelOrder: async (orderId: number): Promise<void> => {
+/**
+ * Hủy đơn hàng
+ */
+const cancelOrder = async (orderId) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error("Vui lòng đăng nhập");
@@ -145,9 +141,7 @@ export const orderService = {
       `${API_URL}/api/customer/orders/${orderId}/cancel`,
       {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
 
@@ -156,5 +150,15 @@ export const orderService = {
     if (!response.ok) {
       throw new Error(data.message || "Không thể hủy đơn hàng");
     }
-  },
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    throw error;
+  }
+};
+
+export const orderService = {
+  createOrder,
+  getOrders,
+  getOrderById,
+  cancelOrder,
 };

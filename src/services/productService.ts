@@ -1,3 +1,5 @@
+/*** Xử lý sản phẩm - lấy danh sách, danh mục ***/
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 export interface Product {
@@ -9,21 +11,11 @@ export interface Product {
   productUrl?: string;
 }
 
-export interface ProductsResponse {
-  data: Product[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export const productService = {
-  /**
-   * Get all products for public display
-   */
-  getProducts: async (category?: string): Promise<ProductsResponse> => {
+/**
+ * Lấy danh sách sản phẩm public
+ */
+const getProducts = async (category = null) => {
+  try {
     const params = new URLSearchParams();
     params.append("limit", "50");
     if (category) {
@@ -39,14 +31,19 @@ export const productService = {
     }
 
     return response.json();
-  },
+  } catch (error) {
+    console.error("Get products error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Get unique categories from products
-   */
-  getCategories: async (): Promise<{ label: string; count: number }[]> => {
-    const response = await productService.getProducts();
-    const categoryMap = new Map<string, number>();
+/**
+ * Lấy danh sách danh mục từ sản phẩm
+ */
+const getCategories = async () => {
+  try {
+    const response = await getProducts();
+    const categoryMap = new Map();
 
     response.data.forEach((product) => {
       const cat = product.category || "Khác";
@@ -57,5 +54,13 @@ export const productService = {
       label,
       count,
     }));
-  },
+  } catch (error) {
+    console.error("Get categories error:", error);
+    throw error;
+  }
+};
+
+export const productService = {
+  getProducts,
+  getCategories,
 };

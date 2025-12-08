@@ -1,19 +1,12 @@
-import type {
-  Customer,
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  RegisterResponse,
-} from "@/types/auth";
+/*** Xử lý login, logout, register cho Customer và Staff ***/
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export const authService = {
-  /**
-   * Login with email and password
-   * Tries customer login first, then admin/staff login if customer fails
-   */
-  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
+/**
+ * Đăng nhập - thử customer trước, nếu fail thì thử staff
+ */
+const login = async (credentials) => {
+  try {
     // Try customer login first
     const isEmail = credentials.email.includes("@");
     const customerPayload = {
@@ -25,15 +18,12 @@ export const authService = {
 
     const customerResponse = await fetch(`${API_URL}/api/auth/customer/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(customerPayload),
     });
 
     if (customerResponse.ok) {
       const data = await customerResponse.json();
-      // Save tokens and user to localStorage
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("user", JSON.stringify(data.customer));
@@ -47,225 +37,212 @@ export const authService = {
     }
 
     // If customer login fails, try admin/staff login
-    const staffPayload = {
-      email: credentials.email,
-      password: credentials.password,
-    };
-
     const staffResponse = await fetch(`${API_URL}/api/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(staffPayload),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password,
+      }),
     });
 
     const staffData = await staffResponse.json();
 
     if (!staffResponse.ok) {
-      console.error("Login error details:", staffData);
-
-      // Translate common error messages to Vietnamese
       let errorMessage = staffData.message || "Đăng nhập thất bại";
-
       if (errorMessage.toLowerCase().includes("invalid credentials")) {
         errorMessage = "Tài khoản hoặc mật khẩu không đúng";
-      } else if (errorMessage.toLowerCase().includes("user not found")) {
-        errorMessage = "Tài khoản không tồn tại";
-      } else if (errorMessage.toLowerCase().includes("incorrect password")) {
-        errorMessage = "Mật khẩu không đúng";
-      } else if (errorMessage.toLowerCase().includes("account is disabled")) {
-        errorMessage = "Tài khoản đã bị vô hiệu hóa";
       }
-
       throw new Error(errorMessage);
     }
 
-    // Staff/Admin login successful - format response to match LoginResponse
-    // Staff login returns { user: { ... } } instead of { customer: { ... } }
     const user = staffData.user;
     localStorage.setItem("accessToken", user.accessToken);
     localStorage.setItem("refreshToken", user.refreshToken || "");
     localStorage.setItem("user", JSON.stringify(user));
 
-    // Return in LoginResponse format
     return {
       message: staffData.message || "Login successful",
-      customer: user, // Use user as customer for compatibility
+      customer: user,
       accessToken: user.accessToken,
       refreshToken: user.refreshToken || "",
     };
-  },
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Register new customer
-   */
-  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+/**
+ * Đăng ký tài khoản customer
+ */
+const register = async (data) => {
+  try {
     const response = await fetch(`${API_URL}/api/auth/customer/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
 
     const responseData = await response.json();
 
     if (!response.ok) {
-      console.error("Register error details:", responseData);
-
-      // Translate common error messages to Vietnamese
       let errorMessage = responseData.message || "Đăng ký thất bại";
-
       if (errorMessage.toLowerCase().includes("email already exists")) {
         errorMessage = "Email đã được sử dụng";
-      } else if (
-        errorMessage.toLowerCase().includes("phone number already exists")
-      ) {
-        errorMessage = "Số điện thoại đã được sử dụng";
       }
-
       throw new Error(errorMessage);
     }
 
-    // Save tokens and user to localStorage (auto login after register)
     localStorage.setItem("accessToken", responseData.accessToken);
     localStorage.setItem("refreshToken", responseData.refreshToken);
     localStorage.setItem("user", JSON.stringify(responseData.customer));
 
-    // Sync cart after register
     import("./cartService").then(({ cartService }) => {
       cartService.onLogin();
     });
 
     return responseData;
-  },
+  } catch (error) {
+    console.error("Register error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Logout user
-   */
-  logout: async (): Promise<void> => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        await fetch(`${API_URL}/api/auth/customer/logout`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      // Always clear localStorage
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+/**
+ * Đăng xuất và xóa thông tin đăng nhập
+ */
+const logout = async () => {
+  try {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      await fetch(`${API_URL}/api/auth/customer/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
     }
-  },
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
+  }
+};
 
-  /**
-   * Get current logged in user
-   */
-  getCurrentUser: (): Customer | null => {
+/**
+ * Lấy thông tin user hiện tại từ localStorage
+ */
+const getCurrentUser = () => {
+  try {
     const userStr = localStorage.getItem("user");
-    if (!userStr) return null;
+    return userStr ? JSON.parse(userStr) : null;
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return null;
+  }
+};
 
-    try {
-      return JSON.parse(userStr);
-    } catch {
-      return null;
-    }
-  },
+/**
+ * Kiểm tra user đã đăng nhập chưa
+ */
+const isAuthenticated = () => {
+  return !!localStorage.getItem("accessToken");
+};
 
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated: (): boolean => {
-    return !!localStorage.getItem("accessToken");
-  },
+/**
+ * Lấy access token
+ */
+const getAccessToken = () => {
+  return localStorage.getItem("accessToken");
+};
 
-  /**
-   * Get access token
-   */
-  getAccessToken: (): string | null => {
-    return localStorage.getItem("accessToken");
-  },
+/**
+ * Cập nhật user trong localStorage và dispatch event
+ */
+const updateCurrentUser = (user) => {
+  localStorage.setItem("user", JSON.stringify(user));
+  window.dispatchEvent(new CustomEvent("userUpdated", { detail: user }));
+};
 
-  /**
-   * Update current user in localStorage and trigger update event
-   */
-  updateCurrentUser: (user: Customer): void => {
-    localStorage.setItem("user", JSON.stringify(user));
-    // Dispatch custom event to notify components of user update
-    window.dispatchEvent(new CustomEvent("userUpdated", { detail: user }));
-  },
-
-  /**
-   * Request password reset email
-   */
-  forgotPassword: async (email: string): Promise<void> => {
+/**
+ * Yêu cầu reset mật khẩu
+ */
+const forgotPassword = async (email) => {
+  try {
     const response = await fetch(
       `${API_URL}/api/auth/customer/forgot-password`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       }
     );
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.message || "Yêu cầu đặt lại mật khẩu thất bại");
     }
-  },
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Verify OTP
-   */
-  verifyOtp: async (email: string, otp: string): Promise<void> => {
+/**
+ * Xác thực OTP
+ */
+const verifyOtp = async (email, otp) => {
+  try {
     const response = await fetch(`${API_URL}/api/auth/customer/verify-otp`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, otp }),
     });
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.message || "Mã OTP không chính xác");
     }
-  },
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Reset password with OTP
-   */
-  resetPassword: async (
-    email: string,
-    otp: string,
-    newPassword: string
-  ): Promise<void> => {
+/**
+ * Reset mật khẩu với OTP
+ */
+const resetPassword = async (email, otp, newPassword) => {
+  try {
     const response = await fetch(
       `${API_URL}/api/auth/customer/reset-password`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, newPassword }),
       }
     );
 
     const data = await response.json();
-
     if (!response.ok) {
       throw new Error(data.message || "Đặt lại mật khẩu thất bại");
     }
-  },
+  } catch (error) {
+    console.error("Reset password error:", error);
+    throw error;
+  }
+};
+
+export const authService = {
+  login,
+  register,
+  logout,
+  getCurrentUser,
+  isAuthenticated,
+  getAccessToken,
+  updateCurrentUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

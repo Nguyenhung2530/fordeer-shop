@@ -1,27 +1,14 @@
+/*** Xử lý thanh toán SePay ***/
+
 import { authService } from "./authService";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export interface CreatePaymentRequest {
-  orderId: number;
-  amount: number;
-  orderInfo?: string;
-}
-
-export interface CreatePaymentResponse {
-  message: string;
-  checkoutURL: string;
-  checkoutFormFields: Record<string, string>;
-  txnRef: string;
-}
-
-export const sepayService = {
-  /**
-   * Create SePay payment data
-   */
-  createPayment: async (
-    data: CreatePaymentRequest
-  ): Promise<CreatePaymentResponse> => {
+/**
+ * Tạo thanh toán SePay
+ */
+const createPayment = async (data) => {
+  try {
     const token = authService.getAccessToken();
     if (!token) {
       throw new Error("Vui lòng đăng nhập để thanh toán");
@@ -43,25 +30,33 @@ export const sepayService = {
     }
 
     return result;
-  },
+  } catch (error) {
+    console.error("Create payment error:", error);
+    throw error;
+  }
+};
 
-  /**
-   * Submit payment form to SePay checkout
-   */
-  submitPayment: (checkoutURL: string, formFields: Record<string, string>) => {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = checkoutURL;
+/**
+ * Submit form thanh toán đến SePay checkout
+ */
+const submitPayment = (checkoutURL, formFields) => {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = checkoutURL;
 
-    Object.keys(formFields).forEach((key) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = key;
-      input.value = formFields[key];
-      form.appendChild(input);
-    });
+  Object.keys(formFields).forEach((key) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = formFields[key];
+    form.appendChild(input);
+  });
 
-    document.body.appendChild(form);
-    form.submit();
-  },
+  document.body.appendChild(form);
+  form.submit();
+};
+
+export const sepayService = {
+  createPayment,
+  submitPayment,
 };
