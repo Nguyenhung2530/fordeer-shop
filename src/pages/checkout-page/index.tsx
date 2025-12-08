@@ -3,12 +3,12 @@ import Footer from "@/components/footer";
 import { authService } from "@/services/authService";
 import { cartService, type CartItem } from "@/services/cartService";
 import { orderService } from "@/services/orderService";
-import { vnpayService } from "@/services/vnpayService";
+import { sepayService } from "@/services/sepayService";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-type PaymentMethod = "cod" | "vnpay" | "bank";
+type PaymentMethod = "cod" | "sepay" | "bank";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -92,15 +92,18 @@ export default function CheckoutPage() {
       // Create order first
       const order = await orderService.createOrder(cartItems, 0);
 
-      // Handle VNPay payment
-      if (paymentMethod === "vnpay") {
-        const vnpayResponse = await vnpayService.createPayment({
+      // Handle SePay payment
+      if (paymentMethod === "sepay") {
+        const sepayResponse = await sepayService.createPayment({
           orderId: order.id,
           amount: total,
           orderInfo: `Thanh toan don hang ${order.orderCode}`,
         });
-        // Redirect to VNPay payment page
-        window.location.href = vnpayResponse.paymentUrl;
+        // Submit form to SePay checkout
+        sepayService.submitPayment(
+          sepayResponse.checkoutURL,
+          sepayResponse.checkoutFormFields
+        );
         return;
       }
 
@@ -336,10 +339,10 @@ export default function CheckoutPage() {
                       </div>
                     </label>
 
-                    {/* VNPay */}
+                    {/* SePay */}
                     <label
                       className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                        paymentMethod === "vnpay"
+                        paymentMethod === "sepay"
                           ? "border-[#45690b] bg-[#f8fdf0]"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
@@ -347,20 +350,20 @@ export default function CheckoutPage() {
                       <input
                         type="radio"
                         name="payment"
-                        value="vnpay"
-                        checked={paymentMethod === "vnpay"}
-                        onChange={() => setPaymentMethod("vnpay")}
+                        value="sepay"
+                        checked={paymentMethod === "sepay"}
+                        onChange={() => setPaymentMethod("sepay")}
                         className="w-5 h-5 text-[#45690b]"
                       />
                       <div className="flex-1">
-                        <p className="font-medium text-[#1d4220]">VNPay</p>
+                        <p className="font-medium text-[#1d4220]">SePay</p>
                         <p className="text-[13px] text-gray-500">
-                          Thanh toán qua cổng VNPay (ATM, Visa, MasterCard, QR)
+                          Thanh toán qua cổng SePay (Chuyển khoản ngân hàng)
                         </p>
                       </div>
-                      <div className="w-10 h-10 bg-[#0066b3] rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-[#1a73e8] rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-[10px]">
-                          VNPay
+                          SePay
                         </span>
                       </div>
                     </label>

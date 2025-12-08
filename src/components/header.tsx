@@ -47,7 +47,7 @@ export default function Header() {
 
   return (
     <header className="bg-[#fcfcf6] sticky top-0 z-50 shadow-sm">
-      <div className="max-w-[1152px] mx-auto px-4 h-[60px] md:h-[75px] flex items-center justify-between">
+      <div className="max-w-[1152px] xl:max-w-[1280px] 2xl:max-w-[1400px] mx-auto px-4 xl:px-6 h-[60px] md:h-[75px] xl:h-[85px] flex items-center justify-between">
         {/* Left: Mobile Menu Button + Logo (on mobile, logo next to hamburger) */}
         <div className="flex items-center gap-2 md:gap-0">
           <button
@@ -91,18 +91,18 @@ export default function Header() {
             <img
               src="/Frame 3.png"
               alt="Fordeer Coffee"
-              className="h-10 md:h-12"
+              className="h-10 md:h-12 xl:h-14 2xl:h-16"
             />
           </Link>
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8 flex-1 justify-center">
+        <nav className="hidden md:flex items-center gap-6 xl:gap-8 2xl:gap-10 flex-1 justify-center">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
-              className={`text-[12px] lg:text-[13px] font-bold transition-colors uppercase tracking-wide ${
+              className={`text-[12px] xl:text-[14px] 2xl:text-[15px] font-bold transition-colors uppercase tracking-wide ${
                 isActive(link.path)
                   ? "text-[#42612e]"
                   : "text-[#9cc019] hover:text-[#45690b]"
@@ -114,7 +114,7 @@ export default function Header() {
         </nav>
 
         {/* Right: Actions - pushed to right edge */}
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex items-center gap-3 md:gap-4 xl:gap-5">
           <Link
             to="/cart"
             className="hover:opacity-80 transition-opacity relative"
@@ -122,10 +122,10 @@ export default function Header() {
             <img
               src="/cart.png"
               alt="Giỏ hàng"
-              className="w-6 h-6 md:w-7 md:h-7"
+              className="w-6 h-6 md:w-7 md:h-7 xl:w-8 xl:h-8"
             />
             {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-[#ff6b35] text-white text-[9px] md:text-[10px] font-bold w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 md:-top-2 md:-right-2 bg-[#ff6b35] text-white text-[9px] md:text-[10px] xl:text-[11px] font-bold w-4 h-4 md:w-5 md:h-5 xl:w-6 xl:h-6 rounded-full flex items-center justify-center">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
@@ -138,7 +138,7 @@ export default function Header() {
               <img
                 src="/user.png"
                 alt="Đăng nhập"
-                className="w-6 h-6 md:w-7 md:h-7"
+                className="w-6 h-6 md:w-7 md:h-7 xl:w-8 xl:h-8"
               />
             </Link>
           )}

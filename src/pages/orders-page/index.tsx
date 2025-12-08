@@ -4,6 +4,7 @@ import { orderService, type Order } from "@/services/orderService";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
 const statusMap: Record<string, { label: string; color: string; bg: string }> =
   {
@@ -30,6 +31,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -44,6 +47,41 @@ export default function OrdersPage() {
       toast.error(error.message || "Không thể tải đơn hàng");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = (orderId: number) => {
+    toast("Bạn có chắc chắn muốn hủy đơn hàng này?", {
+      action: {
+        label: "Xác nhận hủy",
+        onClick: () => confirmCancelOrder(orderId),
+      },
+      cancel: {
+        label: "Không",
+        onClick: () => {},
+      },
+      duration: 10000,
+    });
+  };
+
+  const confirmCancelOrder = async (orderId: number) => {
+    try {
+      setCancellingId(orderId);
+      await orderService.cancelOrder(orderId);
+      toast.success("Đã hủy đơn hàng thành công");
+      // Update local state
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: "cancelled" as const } : o
+        )
+      );
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: "cancelled" });
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Không thể hủy đơn hàng");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -158,6 +196,7 @@ export default function OrdersPage() {
             <div className="space-y-4">
               {filteredOrders.map((order) => {
                 const status = statusMap[order.status] || statusMap.pending;
+                const canCancel = order.status === "pending";
                 return (
                   <div
                     key={order.id}
@@ -219,12 +258,25 @@ export default function OrdersPage() {
                           {formatPrice(order.totalAmount)}
                         </span>
                       </div>
-                      <button
-                        onClick={() => navigate(`/orders/${order.id}`)}
-                        className="px-4 py-2 bg-white border border-[#45690b] text-[#45690b] rounded-lg text-[14px] font-medium hover:bg-[#45690b] hover:text-white transition-colors"
-                      >
-                        Xem chi tiết
-                      </button>
+                      <div className="flex gap-2">
+                        {canCancel && (
+                          <button
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={cancellingId === order.id}
+                            className="px-4 py-2 bg-white border border-red-500 text-red-500 rounded-lg text-[14px] font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                          >
+                            {cancellingId === order.id
+                              ? "Đang hủy..."
+                              : "Hủy đơn"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="px-4 py-2 bg-white border border-[#45690b] text-[#45690b] rounded-lg text-[14px] font-medium hover:bg-[#45690b] hover:text-white transition-colors"
+                        >
+                          Xem chi tiết
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -233,6 +285,143 @@ export default function OrdersPage() {
           )}
         </div>
       </section>
+
+      {/* Order Detail Modal */}
+      {selectedOrder && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-[600px] w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between">
+              <div>
+                <h3 className="text-[18px] font-bold text-[#45690b]">
+                  Chi tiết đơn hàng
+                </h3>
+                <p className="text-[14px] text-gray-500">
+                  #{selectedOrder.orderCode}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedOrder(null)}
+                className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4">
+              {/* Status & Date */}
+              <div className="flex items-center justify-between mb-4 pb-4 border-b">
+                <div>
+                  <p className="text-[13px] text-gray-500 mb-1">Trạng thái</p>
+                  <span
+                    className={`px-3 py-1 rounded-full text-[13px] font-medium ${
+                      statusMap[selectedOrder.status]?.bg || "bg-gray-100"
+                    } ${
+                      statusMap[selectedOrder.status]?.color || "text-gray-700"
+                    }`}
+                  >
+                    {statusMap[selectedOrder.status]?.label || "Không xác định"}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <p className="text-[13px] text-gray-500 mb-1">Ngày đặt</p>
+                  <p className="text-[14px] font-medium text-[#1d4220]">
+                    {formatDate(selectedOrder.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="mb-4">
+                <h4 className="text-[15px] font-bold text-[#45690b] mb-3">
+                  Sản phẩm đã đặt
+                </h4>
+                <div className="space-y-3">
+                  {selectedOrder.items?.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-[#f8fdf0] rounded-lg"
+                    >
+                      <div className="w-16 h-16 bg-white rounded-lg overflow-hidden flex-shrink-0">
+                        <img
+                          src={item.product?.productUrl || "/caphe.png"}
+                          alt={item.product?.productName}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h5 className="text-[14px] font-medium text-[#1d4220] truncate">
+                          {item.product?.productName ||
+                            `Sản phẩm #${item.productId}`}
+                        </h5>
+                        <p className="text-[13px] text-gray-500">
+                          Số lượng: {item.quantity}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[15px] font-bold text-[#45690b]">
+                          {formatPrice(item.price)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-[#f8fdf0] rounded-lg p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[14px] text-gray-600">Tạm tính</span>
+                  <span className="text-[14px] text-[#1d4220]">
+                    {formatPrice(selectedOrder.totalAmount)}
+                  </span>
+                </div>
+                {parseFloat(selectedOrder.discount) > 0 && (
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[14px] text-gray-600">Giảm giá</span>
+                    <span className="text-[14px] text-red-500">
+                      -{formatPrice(selectedOrder.discount)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-[#45690b]/20">
+                  <span className="text-[16px] font-bold text-[#45690b]">
+                    Tổng cộng
+                  </span>
+                  <span className="text-[20px] font-bold text-[#45690b]">
+                    {formatPrice(
+                      parseFloat(selectedOrder.totalAmount) -
+                        parseFloat(selectedOrder.discount || "0")
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            {selectedOrder.status === "pending" && (
+              <div className="p-4 border-t">
+                <button
+                  onClick={() => handleCancelOrder(selectedOrder.id)}
+                  disabled={cancellingId === selectedOrder.id}
+                  className="w-full py-3 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition-colors disabled:opacity-50"
+                >
+                  {cancellingId === selectedOrder.id
+                    ? "Đang hủy..."
+                    : "Hủy đơn hàng"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

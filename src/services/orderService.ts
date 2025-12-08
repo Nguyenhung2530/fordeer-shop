@@ -131,4 +131,30 @@ export const orderService = {
 
     return data.order;
   },
+
+  /**
+   * Cancel order
+   */
+  cancelOrder: async (orderId: number): Promise<void> => {
+    const token = authService.getAccessToken();
+    if (!token) {
+      throw new Error("Vui lòng đăng nhập");
+    }
+
+    const response = await fetch(
+      `${API_URL}/api/customer/orders/${orderId}/cancel`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Không thể hủy đơn hàng");
+    }
+  },
 };

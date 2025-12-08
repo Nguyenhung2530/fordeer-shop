@@ -29,20 +29,28 @@ const formatPrice = (price: number): string => {
 };
 
 // Map API product to component product format
-const mapApiProduct = (apiProduct: ApiProduct): Product => ({
-  id: apiProduct.id,
-  name: apiProduct.productName,
-  category: apiProduct.category || "Khác",
-  price: formatPrice(apiProduct.price),
-  priceNumber: apiProduct.price,
-  image: apiProduct.productUrl || "/caphe.png",
-  description: apiProduct.description,
-  sizes: [
-    { label: "Nhỏ", price: "0đ", priceNumber: 0 },
-    { label: "Vừa", price: "+6.000đ", priceNumber: 6000 },
-    { label: "Lớn", price: "+10.000đ", priceNumber: 10000 },
-  ],
-});
+const mapApiProduct = (apiProduct: ApiProduct): Product => {
+  // Ensure price is a number (API may return string like "45000.00")
+  const priceNum =
+    typeof apiProduct.price === "string"
+      ? parseFloat(apiProduct.price)
+      : apiProduct.price;
+
+  return {
+    id: apiProduct.id,
+    name: apiProduct.productName,
+    category: apiProduct.category || "Khác",
+    price: formatPrice(priceNum),
+    priceNumber: priceNum,
+    image: apiProduct.productUrl || "/caphe.png",
+    description: apiProduct.description,
+    sizes: [
+      { label: "Nhỏ", price: "0đ", priceNumber: 0 },
+      { label: "Vừa", price: "+6.000đ", priceNumber: 6000 },
+      { label: "Lớn", price: "+10.000đ", priceNumber: 10000 },
+    ],
+  };
+};
 
 // Build categories from product list with fixed category order
 const buildCategories = (productList: Product[]) => {
@@ -243,11 +251,14 @@ export default function ProductGrid() {
           }
         }
       `}</style>
-      <div className="max-w-[1152px] mx-auto px-4">
+      <div className="max-w-[1152px] xl:max-w-[1280px] 2xl:max-w-[1400px] mx-auto px-4 xl:px-6">
         {/* Header Section */}
-        <div ref={headerRef} className="text-center mb-6 md:mb-8 relative">
+        <div
+          ref={headerRef}
+          className="text-center mb-6 md:mb-8 xl:mb-10 relative"
+        >
           <p
-            className={`text-[18px] md:text-[32px] font-bold text-[#1d4220] mb-1 md:mb-2 uppercase tracking-wider transition-all duration-700 ${
+            className={`text-[18px] md:text-[32px] xl:text-[36px] 2xl:text-[40px] font-bold text-[#1d4220] mb-1 md:mb-2 uppercase tracking-wider transition-all duration-700 ${
               headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-10"
@@ -256,7 +267,7 @@ export default function ProductGrid() {
             Featured Product
           </p>
           <h2
-            className={`text-[32px] md:text-[62px] font-bold text-[#ff6b35] uppercase transition-all duration-700 delay-200 ${
+            className={`text-[32px] md:text-[62px] xl:text-[72px] 2xl:text-[80px] font-bold text-[#ff6b35] uppercase transition-all duration-700 delay-200 ${
               headerVisible
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-10"
@@ -266,48 +277,50 @@ export default function ProductGrid() {
           </h2>
           {/* Badge - Hidden on mobile */}
           <div
-            className={`hidden md:block absolute top-0 right-[100px] bg-[#ff6b35] text-white px-4 py-2 rounded-lg transform rotate-12 shadow-lg transition-all duration-700 delay-400 hover:rotate-0 hover:scale-110 ${
+            className={`hidden md:block absolute top-0 right-[100px] xl:right-[120px] 2xl:right-[150px] bg-[#ff6b35] text-white px-4 py-2 xl:px-5 xl:py-2.5 rounded-lg transform rotate-12 shadow-lg transition-all duration-700 delay-400 hover:rotate-0 hover:scale-110 ${
               headerVisible ? "opacity-100 scale-100" : "opacity-0 scale-0"
             }`}
           >
-            <span className="text-[14px] font-bold">ngọt ngào</span>
+            <span className="text-[14px] xl:text-[16px] font-bold">
+              ngọt ngào
+            </span>
           </div>
         </div>
 
         {/* Category Tabs - Centered and scrollable on mobile */}
         {isLoading ? (
-          <div className="flex items-center justify-center gap-4 mb-6 md:mb-8 mt-4 md:mt-17">
+          <div className="flex items-center justify-center gap-4 xl:gap-6 mb-6 md:mb-8 xl:mb-10 mt-4 md:mt-17">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-8 w-20 bg-gray-200 rounded animate-pulse"
+                className="h-8 xl:h-10 w-20 xl:w-24 bg-gray-200 rounded animate-pulse"
               />
             ))}
           </div>
         ) : categories.length > 0 ? (
           <div
-            className="flex items-center justify-center gap-3 sm:gap-4 md:gap-10 border-b-[3px] border-[#d9ef7f] mb-6 md:mb-8 mt-4 md:mt-17 overflow-x-auto pb-0"
+            className="flex items-center justify-center gap-2 sm:gap-4 md:gap-10 xl:gap-14 2xl:gap-16 border-b-[3px] border-[#d9ef7f] mb-6 md:mb-8 xl:mb-10 mt-4 md:mt-17 overflow-x-auto pb-0 px-1"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {categories.map((cat, index) => (
               <button
                 key={cat.label}
                 onClick={() => setActiveCategory(cat.label)}
-                className={`relative pb-3 md:pb-4 whitespace-nowrap transition-all duration-300 hover:scale-105 flex-shrink-0 ${
+                className={`relative pb-3 md:pb-4 xl:pb-5 whitespace-nowrap transition-all duration-300 hover:scale-105 flex-shrink-0 ${
                   activeCategory === cat.label
                     ? "text-[#45690b]"
                     : "text-gray-400 hover:text-[#799a01]"
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <span className="text-[14px] md:text-[20px] font-bold uppercase tracking-wide">
+                <span className="text-[11px] sm:text-[13px] md:text-[20px] xl:text-[22px] 2xl:text-[24px] font-bold uppercase tracking-wide">
                   {cat.label}
                 </span>
-                <sup className="ml-1 text-[10px] md:text-[12px] font-normal">
+                <sup className="ml-0.5 sm:ml-1 text-[8px] sm:text-[10px] md:text-[12px] xl:text-[14px] font-normal">
                   {cat.count}
                 </sup>
                 {activeCategory === cat.label && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#45690b] translate-y-[1.5px] animate-pulse" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[3px] xl:h-[4px] bg-[#45690b] translate-y-[1.5px] animate-pulse" />
                 )}
               </button>
             ))}
@@ -316,27 +329,30 @@ export default function ProductGrid() {
 
         {/* Products Carousel */}
         {isLoading ? (
-          <div className="flex gap-4 md:gap-6 overflow-hidden">
+          <div className="flex gap-4 md:gap-6 xl:gap-8 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-[160px] md:w-[240px] flex-shrink-0">
-                <div className="h-[180px] md:h-[260px] bg-gray-200 rounded-lg animate-pulse mb-3" />
-                <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
-                <div className="h-5 bg-gray-200 rounded animate-pulse w-3/4 mx-auto" />
+              <div
+                key={i}
+                className="w-[160px] md:w-[240px] xl:w-[280px] 2xl:w-[300px] flex-shrink-0"
+              >
+                <div className="h-[180px] md:h-[260px] xl:h-[300px] 2xl:h-[320px] bg-gray-200 rounded-lg animate-pulse mb-3" />
+                <div className="h-4 xl:h-5 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-5 xl:h-6 bg-gray-200 rounded animate-pulse w-3/4 mx-auto" />
               </div>
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 xl:py-16 text-gray-500 xl:text-lg">
             Chưa có sản phẩm nào trong danh mục này
           </div>
         ) : (
           <div className="relative flex items-center">
             <button
               onClick={() => scroll("left")}
-              className="hidden md:flex flex-shrink-0 w-10 h-10 bg-[#d9ef7f] rounded-full items-center justify-center hover:bg-[#c5e060] hover:scale-110 transition-all duration-300 shadow-md"
+              className="hidden md:flex flex-shrink-0 w-10 h-10 xl:w-12 xl:h-12 bg-[#d9ef7f] rounded-full items-center justify-center hover:bg-[#c5e060] hover:scale-110 transition-all duration-300 shadow-md"
             >
               <svg
-                className="w-5 h-5 text-[#45690b]"
+                className="w-5 h-5 xl:w-6 xl:h-6 text-[#45690b]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -352,7 +368,7 @@ export default function ProductGrid() {
 
             <div
               ref={scrollRef}
-              className={`flex-1 overflow-x-auto mx-0 md:mx-4 ${
+              className={`flex-1 overflow-x-auto mx-0 md:mx-4 xl:mx-6 ${
                 isDragging ? "cursor-grabbing" : "cursor-grab"
               }`}
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
@@ -381,13 +397,13 @@ export default function ProductGrid() {
               }}
             >
               <div
-                className="flex gap-4 md:gap-6"
+                className="flex gap-4 md:gap-6 xl:gap-8"
                 style={{ width: "max-content" }}
               >
                 {filteredProducts.map((product, index) => (
                   <div
                     key={product.id}
-                    className="w-[160px] md:w-[240px] group cursor-pointer transition-all duration-500 opacity-100"
+                    className="w-[160px] md:w-[240px] xl:w-[280px] 2xl:w-[300px] group cursor-pointer transition-all duration-500 opacity-100"
                     style={{
                       animationDelay: `${index * 100}ms`,
                       animation: "fadeInUp 0.5s ease-out forwards",
@@ -399,21 +415,21 @@ export default function ProductGrid() {
                       }
                     }}
                   >
-                    <div className="relative h-[180px] md:h-[260px] flex items-center justify-center mb-3 md:mb-4 group-hover:-translate-y-2 transition-transform duration-300">
+                    <div className="relative h-[180px] md:h-[260px] xl:h-[300px] 2xl:h-[320px] flex items-center justify-center mb-3 md:mb-4 group-hover:-translate-y-2 transition-transform duration-300">
                       <img
                         src={product.image}
                         alt={product.name}
                         className="h-full w-auto object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-lg group-hover:drop-shadow-2xl"
                       />
                     </div>
-                    <div className="text-center space-y-0.5 md:space-y-1">
-                      <p className="text-[11px] md:text-[13px] text-[#799a01]">
+                    <div className="text-center space-y-0.5 md:space-y-1 xl:space-y-1.5">
+                      <p className="text-[11px] md:text-[13px] xl:text-[14px] text-[#799a01]">
                         {product.category}
                       </p>
-                      <h3 className="text-[13px] md:text-[16px] font-bold text-[#45690b] group-hover:text-[#799a01] transition-colors duration-300 line-clamp-2">
+                      <h3 className="text-[13px] md:text-[16px] xl:text-[18px] 2xl:text-[20px] font-bold text-[#45690b] group-hover:text-[#799a01] transition-colors duration-300 line-clamp-2">
                         {product.name}
                       </h3>
-                      <p className="text-[13px] md:text-[15px] font-semibold text-[#1d4220]">
+                      <p className="text-[13px] md:text-[15px] xl:text-[17px] 2xl:text-[18px] font-semibold text-[#1d4220]">
                         {product.price}
                       </p>
                     </div>
@@ -424,10 +440,10 @@ export default function ProductGrid() {
 
             <button
               onClick={() => scroll("right")}
-              className="hidden md:flex flex-shrink-0 w-10 h-10 bg-[#d9ef7f] rounded-full items-center justify-center hover:bg-[#c5e060] hover:scale-110 transition-all duration-300 shadow-md"
+              className="hidden md:flex flex-shrink-0 w-10 h-10 xl:w-12 xl:h-12 bg-[#d9ef7f] rounded-full items-center justify-center hover:bg-[#c5e060] hover:scale-110 transition-all duration-300 shadow-md"
             >
               <svg
-                className="w-5 h-5 text-[#45690b]"
+                className="w-5 h-5 xl:w-6 xl:h-6 text-[#45690b]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -444,14 +460,14 @@ export default function ProductGrid() {
         )}
 
         {/* View All Link */}
-        <div className="text-center mt-12 md:mt-16">
+        <div className="text-center mt-12 md:mt-16 xl:mt-20">
           <a
             href="#"
-            className="inline-flex items-center gap-1.5 md:gap-2 text-[#799a01] text-[13px] md:text-[15px] font-medium hover:text-[#45690b] transition-all duration-300 group hover:gap-3 md:hover:gap-4"
+            className="inline-flex items-center gap-1.5 md:gap-2 text-[#799a01] text-[13px] md:text-[15px] xl:text-[17px] font-medium hover:text-[#45690b] transition-all duration-300 group hover:gap-3 md:hover:gap-4"
           >
             <span>Xem tất cả sản phẩm</span>
             <svg
-              className="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:translate-x-2 transition-transform duration-300"
+              className="w-3.5 h-3.5 md:w-4 md:h-4 xl:w-5 xl:h-5 group-hover:translate-x-2 transition-transform duration-300"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -555,14 +571,16 @@ export default function ProductGrid() {
 
                 <button
                   onClick={() => {
-                    const sizeExtra =
-                      selectedProduct.sizes?.[selectedSize]?.priceNumber || 0;
+                    const sizeExtra = Number(
+                      selectedProduct.sizes?.[selectedSize]?.priceNumber || 0
+                    );
                     const sizeLabel =
                       selectedProduct.sizes?.[selectedSize]?.label;
+                    const basePrice = Number(selectedProduct.priceNumber) || 0;
                     cartService.addToCart({
                       productId: selectedProduct.id,
                       name: selectedProduct.name,
-                      price: selectedProduct.priceNumber + sizeExtra,
+                      price: basePrice + sizeExtra,
                       image: selectedProduct.image,
                       size: sizeLabel,
                     });

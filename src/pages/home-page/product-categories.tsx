@@ -12,7 +12,7 @@ export default function ProductCategories() {
         <div className="max-w-[900px] mx-auto text-center mb-8 md:mb-12">
           <div ref={titleRef}>
             <h3
-              className={`text-[28px] sm:text-[36px] md:text-[48px] lg:text-[56px] font-bold text-[#45690b] mb-4 md:mb-6 uppercase transition-all duration-700 ${
+              className={`text-[28px] sm:text-[36px] md:text-[48px] xl:text-[56px] font-bold text-[#45690b] mb-4 md:mb-6 uppercase transition-all duration-700 ${
                 titleVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"
@@ -24,7 +24,7 @@ export default function ProductCategories() {
 
           <div ref={textRef}>
             <p
-              className={`text-[14px] sm:text-[16px] md:text-[22px] lg:text-[30px] text-[#1d4220] leading-relaxed mb-6 md:mb-8 transition-all duration-700 delay-200 ${
+              className={`text-[14px] sm:text-[16px] md:text-[22px] xl:text-[30px] text-[#1d4220] leading-relaxed mb-6 md:mb-8 transition-all duration-700 delay-200 ${
                 textVisible
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-10"

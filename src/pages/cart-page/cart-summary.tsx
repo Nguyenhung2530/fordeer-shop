@@ -4,8 +4,41 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+// Demo promo codes
+const PROMO_CODES: Record<
+  string,
+  { discount: number; type: "percent" | "fixed"; description: string }
+> = {
+  nguoingheo: {
+    discount: 50,
+    type: "percent",
+    description: "Giảm 50% cho người nghèo",
+  },
+  noelvuive: {
+    discount: 25,
+    type: "percent",
+    description: "Giảm 25% mừng Noel",
+  },
+  fordeer10: {
+    discount: 10,
+    type: "percent",
+    description: "Giảm 10% thành viên Fordeer",
+  },
+  freeship: {
+    discount: 30000,
+    type: "fixed",
+    description: "Miễn phí ship 30k",
+  },
+  tet2025: {
+    discount: 20,
+    type: "percent",
+    description: "Giảm 20% mừng Tết 2025",
+  },
+};
+
 export default function CartSummary() {
   const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const navigate = useNavigate();
 
@@ -29,8 +62,39 @@ export default function CartSummary() {
     (sum, item) => sum + item.price * item.quantity,
     0
   );
-  const discount = 0; // TODO: implement promo code
+
+  // Calculate discount based on applied promo
+  const calculateDiscount = () => {
+    if (!appliedPromo || !PROMO_CODES[appliedPromo]) return 0;
+    const promo = PROMO_CODES[appliedPromo];
+    if (promo.type === "percent") {
+      return Math.round((subtotal * promo.discount) / 100);
+    }
+    return promo.discount;
+  };
+
+  const discount = calculateDiscount();
   const total = subtotal - discount;
+
+  const handleApplyPromo = () => {
+    const code = promoCode.toLowerCase().trim();
+    if (!code) {
+      toast.error("Vui lòng nhập mã giảm giá");
+      return;
+    }
+    if (PROMO_CODES[code]) {
+      setAppliedPromo(code);
+      toast.success(`Áp dụng thành công: ${PROMO_CODES[code].description}`);
+    } else {
+      toast.error("Mã giảm giá không hợp lệ");
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    toast.info("Đã xóa mã giảm giá");
+  };
 
   const formatPrice = (price: number) => {
     return price.toLocaleString("vi-VN") + "đ";
@@ -65,18 +129,41 @@ export default function CartSummary() {
           <label className="block text-[#45690b] font-bold text-[14px] mb-2">
             Mã giảm giá
           </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              placeholder="Nhập mã giảm giá"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[14px] focus:border-[#45690b] outline-none"
-            />
-            <button className="px-4 py-2 bg-[#d9ef7f] text-[#45690b] font-bold rounded-lg hover:bg-[#c5e060] transition-colors text-[14px]">
-              Áp dụng
-            </button>
-          </div>
+          {appliedPromo ? (
+            <div className="flex items-center justify-between p-3 bg-[#f8fdf0] border border-[#d9ef7f] rounded-lg">
+              <div>
+                <p className="text-[14px] font-bold text-[#45690b] uppercase">
+                  {appliedPromo}
+                </p>
+                <p className="text-[12px] text-gray-600">
+                  {PROMO_CODES[appliedPromo]?.description}
+                </p>
+              </div>
+              <button
+                onClick={handleRemovePromo}
+                className="text-red-500 hover:text-red-700 text-[12px] font-medium"
+              >
+                Xóa
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                placeholder="Nhập mã giảm giá"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-[14px] focus:border-[#45690b] outline-none"
+              />
+              <button
+                onClick={handleApplyPromo}
+                className="px-4 py-2 bg-[#d9ef7f] text-[#45690b] font-bold rounded-lg hover:bg-[#c5e060] transition-colors text-[14px]"
+              >
+                Áp dụng
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
